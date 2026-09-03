@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* Cette app n'a qu'un seul thème (clair), comme l'ancien frontend Vite :
+   on empêche le navigateur/l'OS de forcer un rendu sombre sur les
+   contrôles natifs (inputs, etc.), ce qui rendait le texte saisi invisible
+   (texte clair injecté par le mode sombre du navigateur sur un fond clair). */
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ========== ANIMATIONS (Toast) ========== */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ========== GLOBAL STYLES ========== */
+html,
+body {
+  scroll-behavior: smooth;
+}
+
+/* Meilleur support du focus pour l'accessibilité */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Désactive le zoom automatique iOS sur focus (Safari zoome si < 16px) :
+   !important nécessaire pour passer devant les classes Tailwind
+   (text-xs/text-sm) qui, sinon, l'emportent malgré l'ordre du CSS. */
+input,
+button,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Meilleure performance des animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
