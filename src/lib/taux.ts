@@ -16,9 +16,9 @@ export async function lireTaux(): Promise<Taux[]> {
 
 // Paires réellement utilisables : taux actif, deux devises actives, et
 // valeur de la devise encaissée connue (nécessaire au calcul du bénéfice).
-export async function lireTauxActifs(devises: Devise[]) {
+export function tauxActifs(taux: Taux[], devises: Devise[]) {
   const parCode = new Map(devises.map((d) => [d.code, d]));
-  return (await lireTaux()).filter((t) => {
+  return taux.filter((t) => {
     const s = parCode.get(t.devise_source);
     const c = parCode.get(t.devise_cible);
     return t.actif && s?.actif && c?.actif && s.unites_par_base !== null;

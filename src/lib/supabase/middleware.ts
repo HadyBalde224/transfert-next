@@ -27,12 +27,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Vérifie la signature du jeton sans appeler Supabase, et le rafraîchit s'il
+  // expire.
+  const { data: jeton } = await supabase.auth.getClaims();
+  const user = jeton !== null;
 
-  // Une redirection doit emporter les cookies de session rafraîchis par
-  // getUser(), sinon le navigateur garde un refresh token déjà consommé.
+  // Une redirection doit emporter les cookies de session rafraîchis ci-dessus,
+  // sinon le navigateur garde un refresh token déjà consommé.
   const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
     url.pathname = pathname;

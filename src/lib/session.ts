@@ -15,15 +15,15 @@ type Session =
 // Une seule lecture par requête, même si layout et page la demandent.
 export const lireSession = cache(async (): Promise<Session> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/");
+  // Signature vérifiée localement (clé ES256) : aucun aller-retour. Un compte
+  // désactivé ou supprimé est arrêté par la lecture du profil juste après.
+  const { data: jeton } = await supabase.auth.getClaims();
+  if (!jeton) redirect("/");
 
   const { data, error } = await supabase
     .from("profils")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", jeton.claims.sub)
     .maybeSingle<Profil>();
 
   if (error) {
@@ -38,7 +38,16 @@ export const lireSession = cache(async (): Promise<Session> => {
   return { etat: "ok", profil: data };
 });
 
+// Lance une lecture tout de suite ; l'erreur éventuelle sort au moment du await.
+export function tot<T>(promesse: Promise<T>): Promise<T> {
+  promesse.catch(() => {});
+  return promesse;
+}
+
 export async function exigerProfil(): Promise<Profil> {
+  // Presque toutes les pages en ont besoin : les trois partent en parallèle.
+  tot(lireReglages());
+  tot(lireNoms());
   const s = await lireSession();
   if (s.etat !== "ok") redirect("/acces");
   return s.profil;
@@ -65,7 +74,7 @@ export const lireReglages = cache(async () => {
 });
 
 // Jour du plus ancien transfert visible (borne de la liste des mois).
-export const lirePremierJour = cache(async (defaut: string) => {
+const premierJour = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("transferts")
@@ -74,12 +83,17 @@ export const lirePremierJour = cache(async (defaut: string) => {
     .limit(1)
     .maybeSingle<{ jour: string }>();
   if (error) throw new Error(error.message);
-  return data && data.jour < defaut ? data.jour : defaut;
+  return data?.jour ?? null;
 });
+
+export async function lirePremierJour(defaut: string) {
+  const jour = await premierJour();
+  return jour !== null && jour < defaut ? jour : defaut;
+}
 
 // Mois ajoutés par l'admin (ou par un premier transfert), du plus récent au
 // plus ancien.
-export const lireMois = cache(async (today: string) => {
+const moisAjoutes = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("mois")
@@ -88,9 +102,19 @@ export const lireMois = cache(async (today: string) => {
     .overrideTypes<{ cle: string }[], { merge: false }>();
   // Table absente : le script "mois" n'a pas encore été exécuté.
   if (error && error.code !== "PGRST205" && error.code !== "42P01") throw new Error(error.message);
-  const liste = (data ?? []).map((m) => m.cle);
-  return liste.length > 0 ? liste : [today.slice(0, 7)];
+  return (data ?? []).map((m) => m.cle);
 });
+
+export async function lireMois(today: string) {
+  const liste = await moisAjoutes();
+  return liste.length > 0 ? liste : [today.slice(0, 7)];
+}
+
+// À appeler en tête des pages qui proposent une période.
+export function prechargerPeriodes() {
+  tot(premierJour());
+  tot(moisAjoutes());
+}
 
 // id -> nom. Un employé n'y trouve que lui-même (RLS).
 export const lireNoms = cache(async () => {

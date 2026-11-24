@@ -1,15 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function Deconnexion({ icone = false }: { icone?: boolean }) {
-  const router = useRouter();
   const sortir = async () => {
     await createClient().auth.signOut({ scope: "local" });
-    router.push("/");
-    router.refresh();
+    // Chargement complet voulu : rien de ce compte ne reste en mémoire.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/");
   };
   return icone ? (
     <button

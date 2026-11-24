@@ -1,23 +1,25 @@
 import { notFound, redirect } from "next/navigation";
 import { EnTete } from "@/components/ui";
 import { TransfertForm } from "@/components/TransfertForm";
-import { exigerProfil, lireReglages } from "@/lib/session";
+import { exigerProfil, lireReglages, tot } from "@/lib/session";
 import { lireDroits } from "@/lib/droits";
-import { lireTauxActifs } from "@/lib/taux";
+import { lireTaux, tauxActifs } from "@/lib/taux";
 import { lireTransfert } from "@/lib/transfert";
 
 export const metadata = { title: "Modifier un transfert" };
 
 export default async function ModifierTransfert({ params }: PageProps<"/transferts/[id]/modifier">) {
-  const profil = await exigerProfil();
   const { id } = await params;
-  const t = await lireTransfert(id);
+  const transfert = tot(lireTransfert(id));
+  const tousTaux = tot(lireTaux());
+  const profil = await exigerProfil();
+  const t = await transfert;
   if (!t) notFound();
   const { parametres, devises } = await lireReglages();
   const { modifiable, explication } = await lireDroits(profil, parametres.fuseau);
   if (!modifiable(t)) redirect(`/transferts/${t.id}`);
   // Un transfert reste dans sa zone d'origine.
-  const taux = (await lireTauxActifs(devises)).filter(
+  const taux = tauxActifs(await tousTaux, devises).filter(
     (x) => x.devise_source === t.zone || x.devise_cible === t.zone
   );
 

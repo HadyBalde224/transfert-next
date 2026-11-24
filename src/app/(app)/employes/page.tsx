@@ -3,21 +3,14 @@ import { EmployeCarte, NouvelEmploye } from "@/components/Employes";
 import { MotDePasse } from "@/components/MotDePasse";
 import { createClient } from "@/lib/supabase/server";
 import { adminConfigure } from "@/lib/supabase/admin";
-import { exigerPatron, lireNoms, lireReglages } from "@/lib/session";
+import { exigerPatron, lireNoms, lireReglages, tot } from "@/lib/session";
 import { nomZone, zonesPossibles } from "@/lib/zones";
 import { horodatage } from "@/lib/format";
 import type { ZoneHistorique } from "@/lib/types";
 
 export const metadata = { title: "Équipe" };
 
-export default async function Employes() {
-  await exigerPatron();
-  const { profils } = await lireNoms();
-  const { parametres, devises } = await lireReglages();
-  const employes = profils.filter((p) => p.role === "EMPLOYE");
-  const zones = zonesPossibles(devises, parametres.devise_base);
-  const pret = adminConfigure();
-
+async function lireHistorique() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("zones_historique")
@@ -26,6 +19,19 @@ export default async function Employes() {
     .limit(500)
     .overrideTypes<ZoneHistorique[], { merge: false }>();
   if (error) throw new Error(error.message);
+  return data;
+}
+
+export default async function Employes() {
+  const historique = tot(lireHistorique());
+  await exigerPatron();
+  const { profils } = await lireNoms();
+  const { parametres, devises } = await lireReglages();
+  const employes = profils.filter((p) => p.role === "EMPLOYE");
+  const zones = zonesPossibles(devises, parametres.devise_base);
+  const pret = adminConfigure();
+
+  const data = await historique;
 
   return (
     <>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Filter } from "lucide-react";
+import { Attente } from "@/components/Attente";
 
 // Rangée de filtres arrondis, défilable au doigt.
 export function Puces({
@@ -22,7 +23,7 @@ export function Puces({
     <div className="sans-barre -mx-4 flex items-center gap-2 overflow-x-auto px-4">
       <Filter size={14} className="shrink-0 text-gray-400" />
       <Link href={lien()} className={`puce ${valeur ? "" : "puce-active"}`}>
-        {tous}
+        <Attente>{tous}</Attente>
       </Link>
       {options.map((o) => (
         <Link
@@ -30,7 +31,7 @@ export function Puces({
           href={lien(o.valeur)}
           className={`puce ${valeur === o.valeur ? "puce-active" : ""}`}
         >
-          {o.label}
+          <Attente>{o.label}</Attente>
         </Link>
       ))}
     </div>

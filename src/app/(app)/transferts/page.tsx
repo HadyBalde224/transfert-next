@@ -4,7 +4,7 @@ import { BoutonNouveau, EnTete, Vide } from "@/components/ui";
 import { PilulesPeriode, SelecteurMois } from "@/components/FiltrePeriode";
 import { Puces } from "@/components/Puces";
 import { TransfertCarte } from "@/components/TransfertCarte";
-import { exigerProfil, lireNoms, lireMois, lirePremierJour, lireReglages } from "@/lib/session";
+import { exigerProfil, lireNoms, lireMois, lirePremierJour, lireReglages, prechargerPeriodes } from "@/lib/session";
 import { aujourdhui, lirePeriode, paramsPeriode, un } from "@/lib/periode";
 import { lireDroits } from "@/lib/droits";
 import { lireFiltres, lireTransferts, PAR_PAGE } from "@/lib/transferts";
@@ -12,6 +12,7 @@ import { lireFiltres, lireTransferts, PAR_PAGE } from "@/lib/transferts";
 export const metadata = { title: "Transferts" };
 
 export default async function Transferts({ searchParams }: PageProps<"/transferts">) {
+  prechargerPeriodes();
   const profil = await exigerProfil();
   const patron = profil.role === "PATRON";
   const { parametres, devises, decimales } = await lireReglages();
@@ -26,9 +27,11 @@ export default async function Transferts({ searchParams }: PageProps<"/transfert
   const filtres = lireFiltres(params);
   // Un transfert supprimé disparaît de la liste de l'employé.
   if (!patron) filtres.statut = "VALIDE";
-  const droits = await lireDroits(profil, parametres.fuseau);
   const page = Math.max(1, Math.floor(Number(un(params.page))) || 1);
-  const { lignes, total } = await lireTransferts(periode, filtres, (page - 1) * PAR_PAGE, PAR_PAGE);
+  const [{ lignes, total }, droits] = await Promise.all([
+    lireTransferts(periode, filtres, (page - 1) * PAR_PAGE, PAR_PAGE),
+    lireDroits(profil, parametres.fuseau),
+  ]);
   const pages = Math.max(1, Math.ceil(total / PAR_PAGE));
 
   const actifs = Object.fromEntries(Object.entries(filtres).filter(([, v]) => v)) as Record<string, string>;

@@ -1,7 +1,7 @@
 import { EnTete, Section, Vide } from "@/components/ui";
 import { AjouterZone, ZoneCarte } from "@/components/Taux";
 import { createClient } from "@/lib/supabase/server";
-import { exigerPatron, lireNoms, lireReglages } from "@/lib/session";
+import { exigerPatron, lireNoms, lireReglages, tot } from "@/lib/session";
 import { lireTaux } from "@/lib/taux";
 import { CATALOGUE } from "@/lib/zones";
 import { horodatage, libelleTaux, pourcent } from "@/lib/format";
@@ -9,11 +9,7 @@ import type { TauxHistorique } from "@/lib/types";
 
 export const metadata = { title: "Devises & taux" };
 
-export default async function PageTaux() {
-  await exigerPatron();
-  const { parametres, devises } = await lireReglages();
-  const { noms } = await lireNoms();
-  const taux = await lireTaux();
+async function lireHistorique() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("taux_historique")
@@ -22,6 +18,15 @@ export default async function PageTaux() {
     .limit(20)
     .overrideTypes<TauxHistorique[], { merge: false }>();
   if (error) throw new Error(error.message);
+  return data;
+}
+
+export default async function PageTaux() {
+  const lectures = tot(Promise.all([lireTaux(), lireHistorique()]));
+  await exigerPatron();
+  const { parametres, devises } = await lireReglages();
+  const { noms } = await lireNoms();
+  const [taux, data] = await lectures;
   const base = parametres.devise_base;
 
   const sens = (source: string, cible: string) => {

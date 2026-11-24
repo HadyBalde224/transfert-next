@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Alerte, EnTete } from "@/components/ui";
 import { Recu } from "@/components/Recu";
-import { exigerProfil, lireNoms, lireReglages } from "@/lib/session";
+import { exigerProfil, lireNoms, lireReglages, tot } from "@/lib/session";
 import { lireTransfert } from "@/lib/transfert";
 import { numeroRecu } from "@/lib/recu";
 import { construireRecu } from "@/lib/donneesRecu";
@@ -9,9 +9,10 @@ import { construireRecu } from "@/lib/donneesRecu";
 export const metadata = { title: "Reçu" };
 
 export default async function PageRecu({ params }: PageProps<"/transferts/[id]/recu">) {
-  await exigerProfil();
   const { id } = await params;
-  const t = await lireTransfert(id);
+  const transfert = tot(lireTransfert(id));
+  await exigerProfil();
+  const t = await transfert;
   if (!t) notFound();
   const { parametres, decimales } = await lireReglages();
   const { noms } = await lireNoms();

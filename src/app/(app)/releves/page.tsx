@@ -6,7 +6,7 @@ import { Puces } from "@/components/Puces";
 import { TelechargerReleves } from "@/components/Releves";
 import { Entreprise } from "@/components/Entreprise";
 import { createClient } from "@/lib/supabase/server";
-import { exigerPatron, lireMois, lireNoms, lirePremierJour, lireReglages } from "@/lib/session";
+import { exigerPatron, lireMois, lireNoms, lirePremierJour, lireReglages, prechargerPeriodes } from "@/lib/session";
 import { ajouterJours, aujourdhui, jourValide, lirePeriode, TOUT, un } from "@/lib/periode";
 import { construireReleve } from "@/lib/donneesReleve";
 import { construireRecu } from "@/lib/donneesRecu";
@@ -19,6 +19,7 @@ export const metadata = { title: "Relevés" };
 const MAX_RECUS = 200;
 
 export default async function Releves({ searchParams }: PageProps<"/releves">) {
+  prechargerPeriodes();
   await exigerPatron();
   const { parametres, decimales } = await lireReglages();
   const { profils, noms } = await lireNoms();
@@ -41,13 +42,15 @@ export default async function Releves({ searchParams }: PageProps<"/releves">) {
   if (debut > fin) debut = fin;
   const bornee = libre || periode.mois !== TOUT;
 
-  const { lignes, tropDeLignes } = await lireOperations(debut, fin, choisi?.id);
   const supabase = await createClient();
-  const { data: avant, error } = await supabase.rpc("rapport", {
-    p_debut: "2000-01-01",
-    p_fin: ajouterJours(debut, -1),
-    p_employe: choisi?.id ?? null,
-  });
+  const [{ lignes, tropDeLignes }, { data: avant, error }] = await Promise.all([
+    lireOperations(debut, fin, choisi?.id),
+    supabase.rpc("rapport", {
+      p_debut: "2000-01-01",
+      p_fin: ajouterJours(debut, -1),
+      p_employe: choisi?.id ?? null,
+    }),
+  ]);
   if (error) throw new Error(error.message);
   const cumuls = (avant as Rapport).par_employe_zone;
 

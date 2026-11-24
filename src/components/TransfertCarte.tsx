@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Calendar, Edit, Eye, Trash2, User } from "lucide-react";
 import { dateCourte, heure, montant } from "@/lib/format";
 import type { Transfert } from "@/lib/types";
+import { Attente } from "@/components/Attente";
 import { Badge } from "@/components/ui";
 import { SupprimerTransfert } from "@/components/SupprimerTransfert";
 
@@ -75,7 +76,9 @@ export function TransfertCarte({
           prefetch={false}
           className="flex items-center text-xs font-bold text-gray-600 transition active:scale-90"
         >
-          <Eye size={14} className="mr-1" /> Détails
+          <Attente>
+            <Eye size={14} className="mr-1" /> Détails
+          </Attente>
         </Link>
         {modifiable && (
           <>
@@ -84,7 +87,9 @@ export function TransfertCarte({
               prefetch={false}
               className="flex items-center text-xs font-bold text-blue-600 transition active:scale-90"
             >
-              <Edit size={14} className="mr-1" /> Éditer
+              <Attente>
+                <Edit size={14} className="mr-1" /> Éditer
+              </Attente>
             </Link>
             <SupprimerTransfert
               id={t.id}

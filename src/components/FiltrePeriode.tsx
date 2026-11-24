@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { TOUT, type Periode, type Vue } from "@/lib/periode";
 import { moisLong } from "@/lib/format";
+import { Attente } from "@/components/Attente";
 
 interface Props {
   base: string;
@@ -20,12 +22,16 @@ const majuscule = (t: string) => t[0].toUpperCase() + t.slice(1);
 // Sélecteur de mois dans l'en-tête bleu.
 export function SelecteurMois({ base, periode, garder = {}, mois }: Props & { mois: string[] }) {
   const router = useRouter();
+  const [enCours, demarrer] = useTransition();
   return (
-    <div className="relative mb-3 inline-block">
+    <div className={`relative mb-3 inline-block ${enCours ? "animate-pulse opacity-50" : ""}`}>
       <select
         aria-label="Mois"
         value={periode.mois}
-        onChange={(e) => router.push(url(base, { ...garder, v: "mois", m: e.target.value }))}
+        onChange={(e) => {
+          const cible = url(base, { ...garder, v: "mois", m: e.target.value });
+          demarrer(() => router.push(cible));
+        }}
         className="cursor-pointer appearance-none rounded-lg bg-white/10 py-1 pr-8 pl-3 font-bold text-blue-100 transition outline-none hover:bg-white/20"
       >
         {mois.map((m) => (
@@ -63,7 +69,7 @@ export function PilulesPeriode({ base, periode, garder = {}, today }: Props & { 
             aria-current={periode.vue === vue ? "true" : undefined}
             className={`pilule flex-1 ${periode.vue === vue ? "pilule-active" : ""}`}
           >
-            {label}
+            <Attente>{label}</Attente>
           </Link>
         ))}
       </div>

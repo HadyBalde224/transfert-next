@@ -2,20 +2,21 @@ import { redirect } from "next/navigation";
 import { Alerte, EnTete } from "@/components/ui";
 import { TransfertForm } from "@/components/TransfertForm";
 import { createClient } from "@/lib/supabase/server";
-import { exigerProfil, lireReglages } from "@/lib/session";
-import { lireTauxActifs } from "@/lib/taux";
+import { exigerProfil, lireReglages, tot } from "@/lib/session";
+import { lireTaux, tauxActifs } from "@/lib/taux";
 import { aujourdhui } from "@/lib/periode";
 import { nomZone } from "@/lib/zones";
 
 export const metadata = { title: "Nouveau transfert" };
 
 export default async function NouveauTransfert() {
+  const tousTaux = tot(lireTaux());
   const profil = await exigerProfil();
   // L'admin supervise : seuls les employés enregistrent (règle aussi en base).
   if (profil.role === "PATRON") redirect("/dashboard");
   const { parametres, devises } = await lireReglages();
   const zone = profil.zone;
-  const taux = (await lireTauxActifs(devises)).filter(
+  const taux = tauxActifs(await tousTaux, devises).filter(
     (t) => t.devise_source === zone || t.devise_cible === zone
   );
 

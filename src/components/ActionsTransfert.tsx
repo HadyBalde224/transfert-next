@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Edit, Receipt, RotateCcw, Trash2 } from "lucide-react";
+import { Attente } from "@/components/Attente";
 import { SupprimerTransfert } from "@/components/SupprimerTransfert";
 import type { Statut } from "@/lib/types";
 
@@ -19,12 +20,16 @@ export function ActionsTransfert({
   return (
     <div className="no-print flex flex-wrap gap-2">
       <Link href={`/transferts/${id}/recu`} className="btn-primaire flex-1">
-        <Receipt size={14} /> Reçu
+        <Attente className="gap-1.5">
+          <Receipt size={14} /> Reçu
+        </Attente>
       </Link>
       {modifiable && (
         <>
           <Link href={`/transferts/${id}/modifier`} className="btn-secondaire flex-1">
-            <Edit size={14} /> Modifier
+            <Attente className="gap-1.5">
+              <Edit size={14} /> Modifier
+            </Attente>
           </Link>
           <SupprimerTransfert id={id} resume={resume} className="btn-danger flex-1">
             <Trash2 size={14} /> Supprimer

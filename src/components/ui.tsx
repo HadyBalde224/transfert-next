@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Attente } from "@/components/Attente";
 import { ArrowLeft, PlusCircle, TrendingUp } from "lucide-react";
 
 const ICONE = "rounded-full bg-white/10 p-2 backdrop-blur-sm transition hover:bg-white/20";
@@ -7,7 +8,7 @@ const ICONE = "rounded-full bg-white/10 p-2 backdrop-blur-sm transition hover:bg
 export function IconeLien({ href, label, children }: { href: string; label: string; children: ReactNode }) {
   return (
     <Link href={href} aria-label={label} title={label} className={ICONE}>
-      {children}
+      <Attente>{children}</Attente>
     </Link>
   );
 }
@@ -53,7 +54,9 @@ export function EnTete({
     <header className="rounded-b-2xl bg-gradient-to-br from-blue-700 to-blue-900 p-3 text-white shadow-lg print:rounded-none print:bg-none print:p-0 print:text-black print:shadow-none">
       <div className="flex items-center gap-2.5">
         <Link href={retour} aria-label="Retour" className={`${ICONE} no-print`}>
-          <ArrowLeft size={18} />
+          <Attente>
+            <ArrowLeft size={18} />
+          </Attente>
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-bold tracking-wide">{titre}</h1>
@@ -79,7 +82,7 @@ export function Onglets({ onglets }: { onglets: { href: string; label: string; a
             o.actif ? "bg-white text-blue-800 shadow-md" : "bg-white/10 text-blue-100"
           }`}
         >
-          {o.label}
+          <Attente>{o.label}</Attente>
         </Link>
       ))}
     </nav>
@@ -169,8 +172,10 @@ export function BoutonNouveau() {
         href="/transferts/nouveau"
         className="pointer-events-auto flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 py-3.5 text-base font-black text-white shadow-[0_8px_20px_rgb(34,197,94,0.3)] transition hover:shadow-[0_8px_25px_rgb(34,197,94,0.5)] active:scale-95"
       >
-        <PlusCircle className="mr-2" size={20} />
-        Nouveau Transfert
+        <Attente>
+          <PlusCircle className="mr-2" size={20} />
+          Nouveau Transfert
+        </Attente>
       </Link>
     </div>
   );

@@ -16,7 +16,7 @@ import { GraphiqueBenefice, type Barre } from "@/components/GraphiqueBenefice";
 import { Puces } from "@/components/Puces";
 import { TransfertCarte } from "@/components/TransfertCarte";
 import { createClient } from "@/lib/supabase/server";
-import { exigerProfil, lireNoms, lireMois, lirePremierJour, lireReglages } from "@/lib/session";
+import { exigerProfil, lireNoms, lireMois, lirePremierJour, lireReglages, prechargerPeriodes } from "@/lib/session";
 import { lireFiltres, lireTransferts } from "@/lib/transferts";
 import { aujourdhui, listeJours, lirePeriode, paramsPeriode, TOUT, type Periode } from "@/lib/periode";
 import { NouveauMois, RetirerMois } from "@/components/Mois";
@@ -70,6 +70,7 @@ function caisse(r: Rapport) {
 }
 
 export default async function Accueil({ searchParams }: PageProps<"/dashboard">) {
+  prechargerPeriodes();
   const profil = await exigerProfil();
   const patron = profil.role === "PATRON";
   const { parametres, devises, decimales } = await lireReglages();
@@ -85,7 +86,7 @@ export default async function Accueil({ searchParams }: PageProps<"/dashboard">)
   const employe = patron ? employes.find((p) => p.id === demande)?.id : undefined;
 
   const supabase = await createClient();
-  const [rap, liste, clo] = await Promise.all([
+  const [rap, liste, clo, droits] = await Promise.all([
     supabase.rpc("rapport", { p_debut: periode.debut, p_fin: periode.fin, p_employe: employe ?? null }),
     lireTransferts(
       periode,
@@ -95,11 +96,11 @@ export default async function Accueil({ searchParams }: PageProps<"/dashboard">)
       patron ? RECENTS : JOURNEE
     ),
     supabase.from("clotures").select("*").eq("jour", today).overrideTypes<Cloture[], { merge: false }>(),
+    lireDroits(profil, parametres.fuseau),
   ]);
   const erreur = rap.error ?? clo.error;
   if (erreur) throw new Error(erreur.message);
   const r = rap.data as Rapport;
-  const droits = await lireDroits(profil, parametres.fuseau);
 
   const base = parametres.devise_base;
   const fmt = (v: number) => montant(v, base, decimales[base]);

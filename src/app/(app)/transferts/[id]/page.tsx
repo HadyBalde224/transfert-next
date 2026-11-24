@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Badge, BoutonNouveau, EnTete, Section } from "@/components/ui";
 import { ActionsTransfert } from "@/components/ActionsTransfert";
 import { createClient } from "@/lib/supabase/server";
-import { exigerProfil, lireNoms, lireReglages } from "@/lib/session";
+import { exigerProfil, lireNoms, lireReglages, tot } from "@/lib/session";
 import { lireDroits } from "@/lib/droits";
 import { lireTransfert } from "@/lib/transfert";
 import { nomZone } from "@/lib/zones";
@@ -42,30 +42,33 @@ function Ligne({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+async function lireJournal(id: number) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("transferts_journal")
+    .select("*")
+    .eq("transfert_id", id)
+    .order("id", { ascending: false })
+    .overrideTypes<JournalEntree[], { merge: false }>();
+  return data ?? [];
+}
+
 export default async function DetailTransfert({ params }: PageProps<"/transferts/[id]">) {
+  const { id } = await params;
+  const transfert = tot(lireTransfert(id));
   const profil = await exigerProfil();
   const patron = profil.role === "PATRON";
-  const { id } = await params;
-  const t = await lireTransfert(id);
+  const t = await transfert;
   if (!t) notFound();
 
   const { parametres, decimales } = await lireReglages();
   const { noms } = await lireNoms();
-  const { modifiable, explication } = await lireDroits(profil, parametres.fuseau);
+  const [{ modifiable, explication }, journal] = await Promise.all([
+    lireDroits(profil, parametres.fuseau),
+    patron ? lireJournal(t.id) : [],
+  ]);
   const base = parametres.devise_base;
   const src = (v: number) => montant(v, t.devise_source, decimales[t.devise_source]);
-
-  let journal: JournalEntree[] = [];
-  if (patron) {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("transferts_journal")
-      .select("*")
-      .eq("transfert_id", t.id)
-      .order("id", { ascending: false })
-      .overrideTypes<JournalEntree[], { merge: false }>();
-    journal = data ?? [];
-  }
 
   return (
     <>

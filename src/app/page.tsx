@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type SubmitEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Lock, AlertCircle, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
@@ -13,7 +12,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { addToast } = useToast();
-  const router = useRouter();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -62,8 +60,9 @@ export default function AuthPage() {
       }
 
       addToast(`Bienvenue ${sanitizedUsername}!`, "success", 1500);
-      router.refresh();
-      router.push("/dashboard");
+      // Chargement complet voulu : rien d'un compte précédent ne reste en mémoire.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign("/dashboard");
     } catch {
       addToast("Identifiant ou mot de passe incorrect", "error");
       setPassword("");
