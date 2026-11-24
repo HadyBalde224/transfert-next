@@ -1,9 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { toCredit, type CreditRow, type CreditType } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
+import type { CreditType } from "@/lib/types";
+import { messageErreur, type Resultat } from "./resultat";
 
+// Les crédits sont en MAD (valeur par défaut de la colonne devise).
 export interface CreditInput {
   type: CreditType;
   nomPersonne: string;
@@ -11,78 +13,58 @@ export interface CreditInput {
   montantInitial: number;
 }
 
-const CREDIT_SELECT = "*, remboursements(*)";
+const OK = { ok: true as const, data: undefined };
 
-export async function createCredit(input: CreditInput) {
+export async function createCredit(input: CreditInput): Promise<Resultat> {
+  if (!(Number.isFinite(input.montantInitial) && input.montantInitial > 0)) {
+    return { ok: false, error: "Montant invalide." };
+  }
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Non authentifié" as const };
+  if (!user) return { ok: false, error: "Session expirée. Reconnectez-vous." };
 
-  const { data, error } = await supabase
-    .from("credits")
-    .insert({
-      user_id: user.id,
-      type: input.type,
-      nom_personne: input.nomPersonne,
-      motif: input.motif,
-      montant_initial: input.montantInitial,
-      montant_rembourse: 0,
-    })
-    .select(CREDIT_SELECT)
-    .single<CreditRow>();
-
-  if (error) return { error: error.message };
+  const { error } = await supabase.from("credits").insert({
+    user_id: user.id,
+    type: input.type,
+    nom_personne: input.nomPersonne,
+    motif: input.motif,
+    montant_initial: input.montantInitial,
+    montant_rembourse: 0,
+  });
+  if (error) return { ok: false, error: messageErreur(error) };
   revalidatePath("/credits");
-  return { data: toCredit(data) };
+  return OK;
 }
 
-export async function deleteCredit(id: number) {
+export async function deleteCredit(id: number): Promise<Resultat> {
   const supabase = await createClient();
   const { error } = await supabase.from("credits").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { ok: false, error: messageErreur(error) };
   revalidatePath("/credits");
-  return { success: true as const };
+  return OK;
 }
 
-// Miroir de CreditController#rembourser : plafonnement du montant côté
-// fonction Postgres (rembourser_credit), garanti atomique. On recharge
-// ensuite le crédit avec ses remboursements pour renvoyer la forme
-// attendue par l'UI (identique à ce que Spring renvoyait).
-export async function rembourserCredit(creditId: number, montant: number) {
+// Plafonnement et atomicité garantis par la fonction Postgres.
+export async function rembourserCredit(creditId: number, montant: number): Promise<Resultat> {
+  if (!(Number.isFinite(montant) && montant > 0)) return { ok: false, error: "Montant invalide." };
   const supabase = await createClient();
-  const { error: rpcError } = await supabase.rpc("rembourser_credit", {
+  const { error } = await supabase.rpc("rembourser_credit", {
     p_credit_id: creditId,
     p_montant: montant,
   });
-  if (rpcError) return { error: rpcError.message };
-
-  const { data, error } = await supabase
-    .from("credits")
-    .select(CREDIT_SELECT)
-    .eq("id", creditId)
-    .single<CreditRow>();
-
-  if (error) return { error: error.message };
+  if (error) return { ok: false, error: messageErreur(error) };
   revalidatePath("/credits");
-  return { data: toCredit(data) };
+  return OK;
 }
 
-export async function supprimerRemboursement(remboursementId: number, creditId: number) {
+export async function supprimerRemboursement(remboursementId: number): Promise<Resultat> {
   const supabase = await createClient();
-  const { error: rpcError } = await supabase.rpc("supprimer_remboursement", {
+  const { error } = await supabase.rpc("supprimer_remboursement", {
     p_remboursement_id: remboursementId,
   });
-  if (rpcError) return { error: rpcError.message };
-
-  const { data, error } = await supabase
-    .from("credits")
-    .select(CREDIT_SELECT)
-    .eq("id", creditId)
-    .single<CreditRow>();
-
-  if (error) return { error: error.message };
+  if (error) return { ok: false, error: messageErreur(error) };
   revalidatePath("/credits");
-  return { data: toCredit(data) };
+  return OK;
 }

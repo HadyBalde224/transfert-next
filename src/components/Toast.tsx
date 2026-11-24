@@ -98,6 +98,7 @@ function Toast({
       <span className="flex-1 font-medium text-sm">{message}</span>
       <button
         onClick={onClose}
+        aria-label="Fermer"
         className="text-gray-400 hover:text-gray-600 font-bold"
       >
         ✕
@@ -114,7 +115,7 @@ function ToastContainer({
   removeToast: (id: number) => void;
 }) {
   return (
-    <div className="fixed bottom-4 right-4 space-y-2 z-50 max-w-sm">
+    <div className="no-print fixed inset-x-4 top-4 z-50 mx-auto max-w-sm space-y-2 sm:left-auto sm:right-4 sm:mx-0">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}

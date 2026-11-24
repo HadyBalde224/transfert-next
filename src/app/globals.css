@@ -1,69 +1,112 @@
 @import "tailwindcss";
 
-/* Cette app n'a qu'un seul thème (clair), comme l'ancien frontend Vite :
-   on empêche le navigateur/l'OS de forcer un rendu sombre sur les
-   contrôles natifs (inputs, etc.), ce qui rendait le texte saisi invisible
-   (texte clair injecté par le mode sombre du navigateur sur un fond clair). */
+/* Cette app n'a qu'un seul thème (clair) : on empêche le navigateur/l'OS de
+   forcer un rendu sombre sur les contrôles natifs, ce qui rendait le texte
+   saisi invisible. */
 :root {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #171717;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* ========== ANIMATIONS (Toast) ========== */
 @keyframes slideIn {
   from {
-    transform: translateX(100%);
+    transform: translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.25s ease-out;
 }
 
-/* ========== GLOBAL STYLES ========== */
-html,
-body {
+html {
   scroll-behavior: smooth;
 }
 
-/* Meilleur support du focus pour l'accessibilité */
+button:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
 a:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
-/* Désactive le zoom automatique iOS sur focus (Safari zoome si < 16px) :
-   !important nécessaire pour passer devant les classes Tailwind
-   (text-xs/text-sm) qui, sinon, l'emportent malgré l'ordre du CSS. */
+/* Safari iOS zoome au focus sous 16px : !important pour passer devant les
+   classes Tailwind (text-xs/text-sm). */
 input,
-button,
 select,
 textarea {
   font-size: 16px !important;
 }
 
-/* Meilleure performance des animations */
+@layer components {
+  .carte {
+    @apply rounded-xl border border-gray-100 bg-white p-3.5 shadow-sm;
+  }
+  .champ {
+    @apply w-full min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 font-medium text-gray-800 transition outline-none placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500;
+  }
+  .etiquette {
+    @apply mb-1 block text-[11px] font-bold text-gray-500;
+  }
+  .surtitre {
+    @apply mb-2 text-[10px] font-black tracking-widest text-gray-500 uppercase;
+  }
+  .btn,
+  .btn-primaire,
+  .btn-secondaire,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-bold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primaire {
+    @apply bg-blue-600 text-white shadow-md shadow-blue-200 hover:bg-blue-700;
+  }
+  .btn-secondaire {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+  }
+  .btn-danger {
+    @apply bg-red-50 text-red-600 hover:bg-red-100;
+  }
+  .pilule {
+    @apply rounded-lg bg-white px-3 py-2 text-center text-xs font-bold whitespace-nowrap text-gray-500 shadow-sm transition;
+  }
+  .pilule-active {
+    @apply bg-blue-600 text-white shadow-md;
+  }
+  .puce {
+    @apply rounded-full bg-gray-200 px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap text-gray-600 transition;
+  }
+  .puce-active {
+    @apply bg-gray-800 text-white;
+  }
+  .sans-barre {
+    scrollbar-width: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

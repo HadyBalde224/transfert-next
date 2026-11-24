@@ -1,21 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { ReactNode } from "react";
 import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "TransfertPro",
-  description: "Gestion des transferts MAD/GNF",
+  title: { default: "TransfertPro", template: "%s · TransfertPro" },
+  description: "Gestion des transferts d'argent multi-devises",
+  // Outil interne : rien à indexer.
+  robots: { index: false, follow: false },
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -26,18 +18,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#1d4ed8",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="fr"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
-      <body className="min-h-full bg-gray-100 font-sans text-gray-800">
-        <div className="max-w-md mx-auto bg-white min-h-screen shadow-lg relative">
+      <body className="min-h-full bg-white font-sans text-gray-800">
+        {/* Même format téléphone sur tous les écrans. */}
+        <div className="relative mx-auto min-h-screen max-w-md bg-gray-50 shadow-lg print:max-w-none print:shadow-none">
           <ToastProvider>{children}</ToastProvider>
         </div>
       </body>

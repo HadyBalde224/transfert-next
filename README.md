@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TransfertPro
 
-## Getting Started
+Gestion de transferts d'argent avec une équipe : un admin supervise, les employés enregistrent.
+Le MAD est la devise mère ; chaque zone (GNF, XOF, XAF, EUR, USD) s'échange uniquement avec lui.
 
-First, run the development server:
+Next.js 16 · React 19 · Tailwind 4 · Supabase (Postgres, Auth).
+
+## Rôles
+
+| | Admin | Employé |
+|---|---|---|
+| Enregistrer un transfert | non | oui, dans sa zone |
+| Modifier, supprimer | toujours | ses transferts, jusqu'à minuit, journée non clôturée |
+| Voir | tout | ses transferts et son bénéfice |
+| Comptes, zones, mots de passe, taux, crédits, mois, relevés | oui | non |
+
+Les règles sont imposées par la base (RLS, fonctions et déclencheurs), pas seulement par l'écran.
+« Supprimer » retire un transfert des comptes ; l'admin en garde la trace.
+
+## Installation
+
+1. `npm install`
+2. Copier `.env.example` vers `.env.local` et renseigner les trois clés.
+3. Exécuter une fois, dans l'ordre de leur nom, les scripts de `supabase/migrations`
+   dans Supabase (SQL Editor). Ils supposent les tables d'origine `transactions`, `periodes`,
+   `credits` et `remboursements`, ainsi que les fonctions `rembourser_credit` et
+   `supprimer_remboursement`.
+4. Dans Supabase (Authentication), désactiver « Allow new users to sign up ».
+5. `npm run dev`
+
+`SUPABASE_SECRET_KEY` contourne toutes les règles d'accès : uniquement côté serveur, jamais avec
+le préfixe `NEXT_PUBLIC_`, jamais dans Git.
+
+## Vérifications
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx next typegen && npx tsc --noEmit
+npm run lint
+npm run build
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

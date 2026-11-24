@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, AlertCircle, Loader } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
-
-// Supabase Auth exige un email : l'app n'utilisant qu'un nom d'utilisateur,
-// on le fait correspondre à un email synthétique interne, jamais montré à l'utilisateur.
-function usernameToEmail(username: string) {
-  return `${username.toLowerCase()}@transfert.local`;
-}
+import { usernameToEmail } from "@/lib/identifiant";
 
 export default function AuthPage() {
   const [username, setUsername] = useState("");
@@ -25,7 +20,7 @@ export default function AuthPage() {
 
     if (!username.trim()) {
       newErrors.username = "Nom d'utilisateur requis";
-    } else if (username.length < 2) {
+    } else if (username.trim().length < 2) {
       newErrors.username = "Minimum 2 caractères";
     } else if (username.length > 50) {
       newErrors.username = "Maximum 50 caractères";
@@ -43,7 +38,7 @@ export default function AuthPage() {
 
   const sanitizeInput = (input: string) => input.trim().replace(/[<>]/g, "");
 
-  const handleLogin = async (e: FormEvent) => {
+  const handleLogin = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -90,11 +85,11 @@ export default function AuthPage() {
           <p className="text-gray-500 text-sm mt-2">Accédez à votre compte</p>
         </div>
 
-        {Object.keys(errors).length > 0 && (
+        {Object.values(errors).some(Boolean) && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6 flex items-start gap-3">
             <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
             <div className="text-red-700 text-sm">
-              {Object.values(errors).map((err, i) => (
+              {Object.values(errors).filter(Boolean).map((err, i) => (
                 <div key={i}>{err}</div>
               ))}
             </div>

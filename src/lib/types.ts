@@ -1,27 +1,135 @@
-export type Direction = "MAD_TO_GNF" | "GNF_TO_MAD";
-export type CreditType = "ON_ME_DOIT" | "JE_DOIS";
+// Formes retournées par Supabase. Les noms de colonnes sont conservés tels
+// quels pour les nouvelles tables.
+export type Role = "PATRON" | "EMPLOYE";
+export type Statut = "VALIDE" | "ANNULE";
 
-// Formes brutes retournées par Supabase (colonnes snake_case)
-export interface TransactionRow {
+export interface Profil {
+  id: string;
+  identifiant: string;
+  nom: string;
+  role: Role;
+  actif: boolean;
+  zone: string | null;
+  cree_le: string;
+}
+
+export interface Devise {
+  code: string;
+  nom: string;
+  decimales: number;
+  unites_par_base: number | null;
+  forte: boolean;
+  actif: boolean;
+  ordre: number;
+}
+
+export interface Parametres {
+  devise_base: string;
+  fuseau: string;
+  employe_modifie_frais: boolean;
+  // Absents tant que le script "recus" n'a pas été exécuté.
+  entreprise_nom?: string;
+  entreprise_telephone: string;
+  entreprise_adresse: string;
+  recu_message: string;
+}
+
+export interface Taux {
   id: number;
-  user_id: string;
-  periode_id: number | null;
-  direction: Direction;
+  devise_source: string;
+  devise_cible: string;
+  inverse: boolean;
+  taux_client: number;
+  taux_reel: number;
+  frais_pct: number;
+  actif: boolean;
+  maj_le: string;
+}
+
+export interface TauxHistorique extends Omit<Taux, "maj_le"> {
+  auteur_id: string | null;
+  le: string;
+}
+
+export interface Transfert {
+  id: number;
+  employe_id: string;
+  jour: string;
+  cree_le: string;
+  modifie_le: string | null;
+  statut: Statut;
+  nom_client: string;
+  telephone_client: string;
+  nom_beneficiaire: string;
+  telephone_beneficiaire: string;
+  note: string;
+  devise_source: string;
+  devise_cible: string;
   montant_envoye: number;
-  nom_client: string | null;
-  telephone_client: string | null;
+  frais_pct: number;
   frais: number;
-  taux_echange: number;
+  inverse: boolean;
+  taux_client: number;
+  taux_reel: number;
   montant_recu: number;
-  date_transaction: string;
+  marge_taux: number;
+  benefice: number;
+  benefice_base: number;
+  zone: string;
+  benefice_zone: number;
+  ancien_id: number | null;
+  code_recu?: string;
 }
 
-export interface PeriodeRow {
+export interface JournalEntree {
   id: number;
-  user_id: string;
-  libelle: string;
-  date_debut: string;
+  transfert_id: number;
+  auteur_id: string;
+  action: "MODIFICATION" | "ANNULATION" | "RETABLISSEMENT";
+  motif: string;
+  avant: Transfert;
+  apres: Transfert;
+  le: string;
 }
+
+export interface Cloture {
+  id: number;
+  employe_id: string;
+  jour: string;
+  rapport: string;
+  nb_transferts: number;
+  benefice_base: number;
+  par_zone: { zone: string; nb: number; benefice: number }[];
+  cloture_le: string;
+}
+
+export interface ZoneHistorique {
+  id: number;
+  employe_id: string;
+  ancienne: string | null;
+  nouvelle: string | null;
+  le: string;
+}
+
+export interface Rapport {
+  // Bénéfices en devise de base, sauf "par_zone" et "par_employe_zone".
+  total: { nb: number; benefice: number };
+  par_jour: { jour: string; nb: number; benefice: number }[];
+  par_zone: { zone: string; nb: number; benefice: number; benefice_base: number }[];
+  par_employe: { employe_id: string; nom: string; nb: number; benefice: number }[];
+  par_employe_zone: { employe_id: string; zone: string; nb: number; benefice: number }[];
+  par_corridor: {
+    source: string;
+    cible: string;
+    nb: number;
+    volume: number;
+    remis: number;
+    benefice_base: number;
+  }[];
+}
+
+// Crédits et dettes (tables d'origine)
+export type CreditType = "ON_ME_DOIT" | "JE_DOIS";
 
 export interface RemboursementRow {
   id: number;
@@ -32,34 +140,14 @@ export interface RemboursementRow {
 
 export interface CreditRow {
   id: number;
-  user_id: string;
   type: CreditType;
   nom_personne: string;
   motif: string | null;
+  devise: string;
   montant_initial: number;
   montant_rembourse: number;
   date_creation: string;
   remboursements?: RemboursementRow[];
-}
-
-// Formes utilisées par les composants (camelCase, identique à l'ancien frontend)
-export interface Transaction {
-  id: number;
-  periodeId: number | null;
-  direction: Direction;
-  montantEnvoye: number;
-  nomClient: string;
-  telephoneClient: string;
-  frais: number;
-  tauxEchange: number;
-  montantRecu: number;
-  dateTransaction: string;
-}
-
-export interface Periode {
-  id: number;
-  libelle: string;
-  dateDebut: string;
 }
 
 export interface Remboursement {
@@ -74,42 +162,11 @@ export interface Credit {
   type: CreditType;
   nomPersonne: string;
   motif: string | null;
+  devise: string;
   montantInitial: number;
   montantRembourse: number;
   dateCreation: string;
   remboursements: Remboursement[];
-}
-
-export function toTransaction(row: TransactionRow): Transaction {
-  return {
-    id: row.id,
-    periodeId: row.periode_id,
-    direction: row.direction,
-    montantEnvoye: Number(row.montant_envoye),
-    nomClient: row.nom_client ?? "",
-    telephoneClient: row.telephone_client ?? "",
-    frais: Number(row.frais),
-    tauxEchange: Number(row.taux_echange),
-    montantRecu: Number(row.montant_recu),
-    dateTransaction: row.date_transaction,
-  };
-}
-
-export function toPeriode(row: PeriodeRow): Periode {
-  return {
-    id: row.id,
-    libelle: row.libelle,
-    dateDebut: row.date_debut,
-  };
-}
-
-export function toRemboursement(row: RemboursementRow): Remboursement {
-  return {
-    id: row.id,
-    creditId: row.credit_id,
-    montant: Number(row.montant),
-    dateRemboursement: row.date_remboursement,
-  };
 }
 
 export function toCredit(row: CreditRow): Credit {
@@ -118,9 +175,15 @@ export function toCredit(row: CreditRow): Credit {
     type: row.type,
     nomPersonne: row.nom_personne,
     motif: row.motif,
+    devise: row.devise,
     montantInitial: Number(row.montant_initial),
     montantRembourse: Number(row.montant_rembourse),
     dateCreation: row.date_creation,
-    remboursements: (row.remboursements ?? []).map(toRemboursement),
+    remboursements: (row.remboursements ?? []).map((r) => ({
+      id: r.id,
+      creditId: r.credit_id,
+      montant: Number(r.montant),
+      dateRemboursement: r.date_remboursement,
+    })),
   };
 }
